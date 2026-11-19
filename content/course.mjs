@@ -30,10 +30,6 @@ export const course = {
       "hint": "Arguments after the module filename set load parameters before the initialisation callback runs.",
       "explanation": "The same module loads and unloads. Both callbacks report ready because insmod supplied that label when loading it. Build from source is available when you are ready to change the module itself.",
       "transfer": "How could the loader confirm a module was loaded even if its init function printed nothing?",
-      "reference": [
-        "Read the kernel guide to external modules",
-        "https://docs.kernel.org/kbuild/modules.html"
-      ],
       "command": "sh /tmp/device-lab/run-driver.sh module"
     },
     {
@@ -48,10 +44,6 @@ export const course = {
       "hint": "The default label in lab_hello.c is used when insmod receives no override.",
       "explanation": "The supplied value is set before hello_init() runs. While loaded, the module exposes the configured value through its parameter file.",
       "transfer": "How could you show the default and the supplied value in two runs without recompiling the module?",
-      "reference": [
-        "Read the kernel parameter interface",
-        "https://docs.kernel.org/admin-guide/kernel-parameters.html"
-      ],
       "command": "sh /tmp/device-lab/run-driver.sh parameters"
     },
     {
@@ -66,10 +58,6 @@ export const course = {
       "hint": "The harness tests /sys/module/lab_hello after insmod and unloads the module if initialisation succeeds.",
       "explanation": "An empty label makes insmod fail before the module is left loaded. A valid label permits registration and normal cleanup on unload.",
       "transfer": "If init allocated a resource before a later failure, where would you release that resource?",
-      "reference": [
-        "Read the kernel driver API",
-        "https://docs.kernel.org/driver-api/basics.html"
-      ],
       "command": "sh /tmp/device-lab/run-driver.sh init-error"
     },
     {
@@ -83,10 +71,6 @@ export const course = {
       "hint": "module_init and module_exit register the callbacks used by insmod and rmmod.",
       "explanation": "misc_register() allocates a minor number and registers the device. devtmpfs exposes /dev/lab0. Module exit unregisters it and waits for outstanding scheduled work.",
       "transfer": "Which resource would you clean up if a second registration failed after the first succeeded?",
-      "reference": [
-        "Read the external module guide",
-        "https://docs.kernel.org/kbuild/modules.html"
-      ],
       "command": "sh /tmp/device-lab/run-driver.sh lifecycle",
       "file": "lab_device.c"
     },
@@ -101,10 +85,6 @@ export const course = {
       "hint": "The app advances its buffer offset after each successful read. The driver reports actual bytes copied.",
       "explanation": "Each read consumes up to the requested count. The offset loop rebuilds the five-byte payload without assuming that requests are fully satisfied.",
       "transfer": "What return value would mean a read of one byte copied zero bytes, and how would the caller interpret it?",
-      "reference": [
-        "Read read(2)",
-        "https://man7.org/linux/man-pages/man2/read.2.html"
-      ],
       "file": "probe.c",
       "command": "sh /tmp/device-lab/run-driver.sh io"
     },
@@ -119,10 +99,6 @@ export const course = {
       "hint": "The probe queries capacity via ioctl(), then fills the queue before its final write. Keep CAPACITY a power of two for the FIFO.",
       "explanation": "The open flag chooses between waiting and returning EAGAIN. Queue capacity controls backpressure and does not change the meaning of an empty read.",
       "transfer": "What should happen if a single write requests more bytes than the driver currently has room for?",
-      "reference": [
-        "Read open(2)",
-        "https://man7.org/linux/man-pages/man2/open.2.html"
-      ],
       "command": "sh /tmp/device-lab/run-driver.sh nonblock",
       "file": "lab_device.c"
     },
@@ -138,10 +114,6 @@ export const course = {
       "hint": "The probe queries the queue capacity and drains the accepted bytes before retrying.",
       "explanation": "The first write consumes up to capacity. The probe advances its pointer by the accepted count and submits only the remaining bytes.",
       "transfer": "What extra branch would you need if a nonblocking write returned EAGAIN before accepting any bytes?",
-      "reference": [
-        "Read write(2)",
-        "https://man7.org/linux/man-pages/man2/write.2.html"
-      ],
       "command": "sh /tmp/device-lab/run-driver.sh short-write"
     },
     {
@@ -156,10 +128,6 @@ export const course = {
       "hint": "The shell opens descriptor 9 and keeps it live during the first unload attempt.",
       "explanation": "The first unload is refused while the open descriptor pins the module. Closing that descriptor lets the normal unload succeed.",
       "transfer": "Why could a duplicated descriptor prevent unload even after the original descriptor was closed?",
-      "reference": [
-        "Read the kernel driver basics",
-        "https://docs.kernel.org/driver-api/basics.html"
-      ],
       "command": "sh /tmp/device-lab/run-driver.sh references"
     },
     {
@@ -173,10 +141,6 @@ export const course = {
       "hint": "The child opens the device without O_NONBLOCK. The parent confirms the child is still running before writing.",
       "explanation": "The write changes the queue condition then wakes the reader. The reader reacquires the mutex and reads the byte.",
       "transfer": "Why must a woken reader check the condition again when several processes are waiting?",
-      "reference": [
-        "Read wait queues and wake events",
-        "https://docs.kernel.org/driver-api/basics.html"
-      ],
       "file": "probe.c",
       "command": "sh /tmp/device-lab/run-driver.sh blocking"
     },
@@ -192,10 +156,6 @@ export const course = {
       "hint": "The alarm happens before a second process writes R. The signal handler’s flags control whether the read restarts.",
       "explanation": "With no restart flag, the blocked read reports EINTR. With SA_RESTART, it waits again and returns the byte from the writer.",
       "transfer": "When would retrying EINTR automatically hide an application’s own cancellation request?",
-      "reference": [
-        "Read signal(7)",
-        "https://man7.org/linux/man-pages/man7/signal.7.html"
-      ],
       "command": "sh /tmp/device-lab/run-driver.sh interrupt"
     },
     {
@@ -209,10 +169,6 @@ export const course = {
       "hint": "LAB_GET_INFO copies the structure to userspace. LAB_RESET changes the queue without returning a structure.",
       "explanation": "The queue starts with the bytes written by the probe, then resets to empty. Unknown requests report ENOTTY. Fixed-width fields make the ABI layout predictable.",
       "transfer": "What should the driver return if it cannot write the output structure to the supplied userspace pointer?",
-      "reference": [
-        "Read kernel ioctl guidance",
-        "https://docs.kernel.org/driver-api/ioctl.html"
-      ],
       "command": "sh /tmp/device-lab/run-driver.sh control",
       "file": "lab_device.c"
     },
@@ -227,10 +183,6 @@ export const course = {
       "hint": "The ioctl schedules work. poll_wait() attaches the waiter to the queue, then the driver reports current readiness.",
       "explanation": "An empty queue is initially unreadable. After the callback inserts data, poll wakes, then read consumes the event byte.",
       "transfer": "What should the lab do if work is still pending when rmmod starts?",
-      "reference": [
-        "Read the workqueue guide",
-        "https://docs.kernel.org/core-api/workqueue.html"
-      ],
       "command": "sh /tmp/device-lab/run-driver.sh events",
       "file": "lab_device.c"
     },
@@ -245,10 +197,6 @@ export const course = {
       "hint": "The driver populates the page at mapping time. The ioctl reads fresh state when called.",
       "explanation": "In the starter, the mapping precedes the write so the snapshot remains zero. Mapping after the write captures the updated queue count.",
       "transfer": "Why must the driver zero a page before mapping a small structure from it into userspace?",
-      "reference": [
-        "Read kernel memory-management APIs",
-        "https://docs.kernel.org/core-api/mm-api.html"
-      ],
       "command": "sh /tmp/device-lab/run-driver.sh map",
       "file": "lab_device.c"
     },
@@ -263,10 +211,6 @@ export const course = {
       "hint": "The device and driver use the same name. The read-only attribute is implemented by rate_show().",
       "explanation": "The driver core calls probe on a match and exposes the bound driver and attributes through sysfs. Unregistering the device calls remove and takes away the device path.",
       "transfer": "Change only the platform device name. What happens to the driver symlink, and why does the check fail?",
-      "reference": [
-        "Read the platform driver guide",
-        "https://docs.kernel.org/driver-api/driver-model/platform.html"
-      ],
       "file": "lab_platform.c",
       "command": "sh /tmp/device-lab/run-driver.sh platform"
     },
@@ -281,10 +225,6 @@ export const course = {
       "hint": "Use read_info() to observe the queue without consuming data. The shell harness separately checks the device path after rmmod.",
       "explanation": "A passing byte test checks the data path, the poll check verifies notification, and the final queue and device-path checks verify cleanup at two levels.",
       "transfer": "Add a second run that forces queue backpressure and checks that the driver recovers when the client reads from it.",
-      "reference": [
-        "Read the Linux driver API",
-        "https://docs.kernel.org/driver-api/index.html"
-      ],
       "file": "probe.c",
       "command": "sh /tmp/device-lab/run-driver.sh capstone"
     }
