@@ -106,7 +106,7 @@ function showSource(name, fullFile = false) {
   $('section-note').hidden = !region;
   source.scrollTop = 0;
   source.scrollLeft = 0;
-  if (name === lesson.file) positionSource(lesson.focus);
+  if (name === lesson.file && !fullFile) positionSource(lesson.focus);
 }
 toggleFile.onclick = () => {
   showSource(activeFile, Boolean(region));
@@ -116,14 +116,14 @@ $('edit-step').onclick = () => {
   $('program').open = true;
   const tutorial = tutorials[lesson.id];
   const targetFile = tutorial.editFile ?? lesson.file;
-  showSource(targetFile);
+  showSource(targetFile, Boolean(lesson.buildsOn?.length));
   showDraftStatus();
   const edit = tutorial.edit;
   source.focus();
   positionSource(source.value.includes(edit) ? edit : lesson.focus);
 };
 $('program').addEventListener('toggle', () => {
-  if ($('program').open && document.activeElement !== source && activeFile === lesson.file)
+  if (lesson && $('program').open && !lesson.buildsOn?.length && document.activeElement !== source && activeFile === lesson.file)
     positionSource(lesson.focus);
 });
 source.oninput = () => {
@@ -142,7 +142,7 @@ source.oninput = () => {
   showRun();
 };
 file.onchange = () => {
-  showSource(file.value);
+  showSource(file.value, Boolean(lesson.buildsOn?.length));
   showDraftStatus();
 };
 $('restore').onclick = () => {
@@ -156,7 +156,7 @@ $('restore').onclick = () => {
     text: saved ? 'Starter source restored.' :
       'Starter source restored in this tab. The browser could not remove the saved draft, which may return when you reopen the lesson.'
   });
-  showSource(activeFile);
+  showSource(activeFile, Boolean(lesson.buildsOn?.length));
   showDraftStatus();
   showRun();
   source.focus({ preventScroll: true });
@@ -202,7 +202,11 @@ async function showLesson(index) {
   lesson = course.lessons[index];
   const thisSelection = ++selection;
   const tutorial = tutorials[lesson.id];
-  $('program').open = false;
+  const prerequisites = lesson.buildsOn ?? [];
+  const capstone = prerequisites.length > 0;
+  $('program').open = capstone;
+  $('program-summary').textContent = capstone ? 'Complete example' : 'Source files and editor';
+
   $('draft-notice').hidden = true;
   $('walkthrough').replaceChildren(...tutorial.steps.map(step => {
     const item = document.createElement('li');
@@ -228,13 +232,17 @@ async function showLesson(index) {
     instructions:'instructions', task:'task', hint:'hint', explanation:'explanation',
     transfer:'transfer'
   })) $(id).textContent = lesson[field] ?? course[field] ?? '';
-  const starter = course.lessons.find(item => item.id === lesson.buildsOn);
-  $('builds-on').hidden = !starter;
-  if (starter) {
-    const link = $('builds-on-link');
-    link.href = '#' + starter.id;
-    link.textContent = starter.title;
-  }
+  $('workbench-heading').textContent = capstone ? 'Capstone' : 'Run it in Linux';
+  $('builds-on').hidden = !capstone;
+  $('capstone-files').hidden = !capstone;
+  $('builds-on-list').replaceChildren(...prerequisites.map(id => {
+    const item = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = '#' + id;
+    link.textContent = course.lessons.find(earlier => earlier.id === id).title;
+    item.append(link);
+    return item;
+  }));
   showReferences(lesson.id);
   picker.value = lesson.id;
   $('next-lesson').replaceChildren();
@@ -242,7 +250,8 @@ async function showLesson(index) {
     if (!other) continue;
     const link = document.createElement('a');
     link.href = '#' + other.id;
-    link.textContent = label + ' · ' + other.title;
+    const followsThisLesson = label === 'Next' && other.buildsOn?.includes(lesson.id);
+    link.textContent = (followsThisLesson ? 'Continue to the capstone' : label) + ' · ' + other.title;
     $('next-lesson').append(link);
   }
   source.disabled = true;
@@ -256,7 +265,7 @@ async function showLesson(index) {
   const sourceReady = await starterFiles;
   if (selection !== thisSelection) return;
   if (sourceReady) {
-    showSource(tutorial.editFile ?? lesson.file);
+    showSource(tutorial.editFile ?? lesson.file, capstone);
     source.disabled = false;
     file.disabled = false;
     $('edit-step').disabled = false;

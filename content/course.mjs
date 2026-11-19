@@ -96,7 +96,7 @@ export const course = {
     },
     {
       "id": "io",
-      "buildsOn": "open-device",
+      "buildsOn": ["open-device"],
       "section": "Character devices",
       "title": "Move bytes through a character device",
       "intro": "The C probe opens /dev/lab0 and writes five bytes. The driver stores them in a bounded queue. The first byte that was written is the first to be read.",
@@ -247,7 +247,8 @@ export const course = {
     },
     {
       "id": "capstone",
-      "section": "Binding and verification",
+      "buildsOn": ["io", "control", "events"],
+      "section": "Capstone",
       "title": "Verify a complete character-device session",
       "intro": "The C probe checks the byte round trip, waits for an event and inspects the queue. The guest script checks the separate device path after removing the module.",
       "question": "Which results check the data path, notification and cleanup separately?",

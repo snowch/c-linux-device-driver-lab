@@ -10,6 +10,8 @@ Each lesson includes editable source, a runnable experiment, a code change, a hi
 
 Choose **Download for offline use** before disconnecting. Save roughly 145 MB of free browser storage for this course. Open the same URL in the same browser profile after the page reports **Available offline**. The lesson files, editor, compiler, kernel and runtime are included. External documentation requires an internet connection. HTTPS or localhost and a browser with WebAssembly and service workers are required.
 
+Capstone sections link back to the smaller exercises and open the complete runnable example.
+
 ## Lessons
 
 ### Kernel module APIs
@@ -35,9 +37,11 @@ Choose **Download for offline use** before disconnecting. Save roughly 145 MB of
 - [Notify poll from delayed work](https://snowch.github.io/c-linux-device-driver-lab/#events)
 - [Map a read-only snapshot into userspace](https://snowch.github.io/c-linux-device-driver-lab/#map)
 
-### Binding and verification
+### Platform binding
 
 - [Bind a synthetic platform driver](https://snowch.github.io/c-linux-device-driver-lab/#platform)
+### Capstone
+
 - [Verify a complete character-device session](https://snowch.github.io/c-linux-device-driver-lab/#capstone)
 
 ## Scope
