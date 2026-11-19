@@ -30,7 +30,8 @@ else
         grep '^lab_device ' /proc/modules
     else
         if [ ! -x probe ] || [ probe.c -nt probe ] || [ lab_abi.h -nt probe ]; then
-            gcc -std=c11 -Wall -Wextra -Werror -O2 probe.c -o probe
+            gcc -std=c11 -Wall -Wextra -Werror probe.c -o probe.next
+            mv probe.next probe
         fi
         ./probe "$mode"
     fi

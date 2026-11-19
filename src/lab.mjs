@@ -2,11 +2,15 @@ import { course } from './course.mjs';
 
 const $ = id => document.getElementById(id);
 const source = $('source');
+const runButton = $('run');
+const buildButton = $('build-source');
 const file = $('file');
 const terminal = $('terminal');
 const command = $('command');
 const status = $('runtime-status');
 const encoder = new TextEncoder();
+let decoder = new TextDecoder();
+const serialByte = new Uint8Array(1);
 const defaults = new Map();
 const edits = new Map();
 const files = Object.keys(course.files);
@@ -121,11 +125,11 @@ async function showLesson() {
     $('next-lesson').append(link);
   }
   source.disabled = true;
-  $('run').disabled = true;
+  runButton.disabled = buildButton.disabled = true;
   if (await starterFiles && selection === thisSelection) {
     showSource(lesson.file ?? files[0]);
     source.disabled = false;
-    $('run').disabled = running;
+    runButton.disabled = buildButton.disabled = running;
   }
 }
 addEventListener('hashchange', () => {
@@ -154,7 +158,7 @@ function idle(message) {
   running = false;
   resultMarker = '';
   status.textContent = message;
-  $('run').disabled = source.disabled;
+  runButton.disabled = buildButton.disabled = source.disabled;
   $('stop').disabled = !vm;
   enableShell(Boolean(vm));
 }
@@ -175,7 +179,8 @@ function receive(byte) {
   } else if (byte === 8) {
     line = line.slice(0, -1);
   } else if (byte !== 13 && (byte >= 32 || byte === 9 || byte === 27)) {
-    line = (line + String.fromCharCode(byte)).slice(-5000);
+    serialByte[0] = byte;
+    line = (line + decoder.decode(serialByte, { stream: true })).slice(-5000);
   }
   paint();
 }
@@ -201,6 +206,7 @@ async function initrd() {
 async function bootLinux() {
   terminalText = 'Booting the local Linux guest…\n';
   line = '';
+  decoder = new TextDecoder();
   paint();
   const [{ V86 }, image] = await Promise.all([import('./runtime/libv86.mjs'), initrd()]);
   status.textContent = 'Booting Linux';
@@ -215,7 +221,7 @@ async function bootLinux() {
   });
   await new Promise((resolve, reject) => {
     let recent = '';
-    const timeout = setTimeout(() => finish(new Error('Linux did not reach its shell. Try running again.')), 180000);
+    const timeout = setTimeout(() => finish(new Error('Linux did not reach its shell. Try running again.')), 300000);
     function finish(error) {
       clearTimeout(timeout);
       vm.remove_listener('serial0-output-byte', listener);
@@ -233,18 +239,22 @@ async function bootLinux() {
   $('restart').disabled = false;
 }
 
-$('run').onclick = async () => {
+async function runExercise(forceBuild) {
   if (running) return;
+  status.textContent = 'Preparing source';
   const current = lesson;
   const values = files.map(name => [name, valueOf(name)]);
   const prefix = 'run-' + (++runNumber) + '-';
   const marker = '__LAB_RESULT_' + runNumber + '__';
   running = true;
-  $('run').disabled = true;
+  runButton.disabled = buildButton.disabled = true;
   $('restart').disabled = true;
   enableShell(false);
   try {
-    if (!boot) boot = bootLinux();
+    if (!boot) {
+      status.textContent = 'Loading Linux';
+      boot = bootLinux();
+    }
     await boot;
     $('restart').disabled = true;
     enableShell(false);
@@ -262,7 +272,25 @@ $('run').onclick = async () => {
       ...files.map((name, index) =>
         `cmp -s ${temporary[index]} ${input}${name} || cp ${temporary[index]} ${input}${name}`)
     ];
-    const script = [...setup, course.prepare, current.command].join('\n') + '\n';
+    const modules = course.starterModules;
+    const moduleFiles = [];
+    const starter = !forceBuild && modules.inputs.every(name =>
+      values.some(([fileName, value]) => fileName === name && value === defaults.get(name)));
+    if (starter) {
+      for (const name of modules.files) {
+        const url = './runtime/starter/' + name;
+        const response = await fetch(url);
+        if (!response.ok) throw Error('Could not load the starter module ' + name);
+        await vm.create_file(prefix + name, new Uint8Array(await response.arrayBuffer()));
+        moduleFiles.push('/exchange/' + prefix + name);
+      }
+      setup[1] = `trap 'rm -f ${[...temporary, ...moduleFiles, scriptName].join(' ')}' EXIT`;
+    }
+    const moduleSetup = starter
+      ? [...modules.files.map((name, index) => `cp ${moduleFiles[index]} /tmp/device-lab/${name}`),
+        "echo 'Using the precompiled starter modules.'"]
+      : forceBuild ? ['rm -f /tmp/device-lab/lab_device.ko /tmp/device-lab/lab_platform.ko'] : [];
+    const script = [...setup, course.prepare, ...moduleSetup, current.command].join('\n') + '\n';
     await vm.create_file(prefix + 'exercise.sh', encoder.encode(script));
     terminalText = '';
     line = '';
@@ -272,7 +300,7 @@ $('run').onclick = async () => {
     $('restart').disabled = false;
     vm.serial0_send(`sh ${scriptName}; printf '\\n${marker}%s\\n' "$?"\n`);
   } catch (error) {
-    if (vm) await vm.destroy();
+    if (vm) await vm.destroy().catch(() => {});
     vm = undefined;
     boot = undefined;
     $('restart').disabled = true;
@@ -280,7 +308,9 @@ $('run').onclick = async () => {
     idle(error.message);
     $('stop').disabled = true;
   }
-};
+}
+runButton.onclick = () => void runExercise(false);
+buildButton.onclick = () => void runExercise(true);
 
 $('stop').onclick = () => {
   if (!vm) return;
@@ -290,7 +320,7 @@ $('stop').onclick = () => {
 $('restart').onclick = async () => {
   if (!vm || !confirm('Reset Linux and discard its temporary files? Editor changes are kept.')) return;
   $('restart').disabled = true;
-  $('run').disabled = true;
+  runButton.disabled = buildButton.disabled = true;
   $('stop').disabled = true;
   running = true;
   enableShell(false);

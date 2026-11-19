@@ -2,7 +2,7 @@ export const course = {
   "slug": "c-linux-device-driver-lab",
   "title": "C Linux Device Driver Lab",
   "summary": "Kernel modules, character devices, userspace ABI, readiness, workqueues and platform binding.",
-  "instructions": "Run in Linux builds and loads the selected kernel module, then runs its check. The first build can take a few minutes. Wait for the unload message before editing and running again.",
+  "instructions": "Run in Linux loads the selected module and runs its check. The unchanged starter modules are already compiled for this guest. Edits to a module trigger Kbuild. Build from source forces a clean module build, which can take several minutes.",
   "files": {
     "lab_device.c": "./examples/lab_device.c",
     "probe.c": "./examples/probe.c",
@@ -175,5 +175,17 @@ export const course = {
       "file": "probe.c",
       "command": "sh /tmp/device-lab/run-driver.sh capstone"
     }
-  ]
+  ],
+  "starterModules": {
+    "inputs": [
+      "lab_device.c",
+      "lab_platform.c",
+      "lab_abi.h",
+      "Makefile"
+    ],
+    "files": [
+      "lab_device.ko",
+      "lab_platform.ko"
+    ]
+  }
 };

@@ -21,6 +21,8 @@ for (const path of ['index.html', 'style.css', 'lab.mjs', 'course.mjs', 'runtime
 for (const [name, url] of Object.entries(course.files)) {
   assert(offlinePaths.has(url.slice(2)), name + ' must be saved offline');
 }
+for (const name of course.starterModules.files)
+  assert(offlinePaths.has('runtime/starter/' + name), name + ' must be saved offline');
 const ids = new Set();
 for (const lesson of course.lessons) {
   assert(!ids.has(lesson.id), 'duplicate lesson ID');
