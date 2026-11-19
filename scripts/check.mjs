@@ -23,6 +23,11 @@ for (const [name, url] of Object.entries(course.files)) {
 }
 for (const name of course.starterModules.files)
   assert(offlinePaths.has('runtime/starter/' + name), name + ' must be saved offline');
+for (const image of ['cover.webp', 'favicon.ico', 'apple-touch-icon.png'])
+  assert(offlinePaths.has(image), image + ' must be saved offline');
+const html = await readFile(new URL('index.html', dist), 'utf8');
+assert(html.includes('href="#' + course.lessons[0].id + '"'), 'overview links to the first lesson');
+assert(!html.includes('{{'), 'overview placeholders must be rendered');
 const ids = new Set();
 for (const lesson of course.lessons) {
   assert(!ids.has(lesson.id), 'duplicate lesson ID');

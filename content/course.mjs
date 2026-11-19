@@ -1,6 +1,10 @@
 export const course = {
   "slug": "c-linux-device-driver-lab",
   "title": "Introduction to Linux Device Drivers in C",
+  "overview": {
+    "description": "Load a real Linux kernel module, then build up to a character device. Exercise reads and writes, wait queues, ioctl, memory mapping and synthetic platform binding.",
+    "prerequisites": "Know basic C, file descriptors and processes. The course introduces driver interfaces using synthetic devices in the guest."
+  },
   "summary": "Learn kernel module APIs, character-device operations and synthetic platform binding in a browser Linux guest.",
   "instructions": "Run in Linux loads the selected module and runs its check. The unchanged starter modules are already compiled for this guest. Edits to a module trigger Kbuild. Build from source forces a clean module build, which can take several minutes.",
   "files": {
