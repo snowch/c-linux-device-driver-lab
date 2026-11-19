@@ -2,6 +2,44 @@ const step = (heading, text, file, anchor, lines) => ({ heading, text, file, anc
 const guide = (edit, ...steps) => ({ edit, steps });
 
 export const walkthroughs = {
+  "waits-capstone": {
+    "edit": "const int timeout_ms =",
+    "steps": [
+      {
+        "heading": "Reset and verify the queue",
+        "text": "The probe checks both the queued byte count and whether poll sees readable data.",
+        "anchor": "require(ioctl(fd, LAB_RESET) == 0, \"reset queue before waiting\");",
+        "lines": 4,
+        "file": "probe.c"
+      },
+      {
+        "heading": "Schedule work and read its event",
+        "text": "The wait is bounded. A positive readiness result is followed by a read of the new byte.",
+        "anchor": "require(ioctl(fd, LAB_SCHEDULE) == 0, \"schedule event\");",
+        "lines": 7,
+        "file": "probe.c"
+      }
+    ]
+  },
+  "platform-rate": {
+    "edit": "    attribute=rate",
+    "steps": [
+      {
+        "heading": "Load the module",
+        "text": "Loading the module creates the synthetic device and makes its attributes available.",
+        "anchor": "elif [ \"$mode\" = platform-rate ]; then",
+        "lines": 2,
+        "file": "run-driver.sh"
+      },
+      {
+        "heading": "Read the attribute from userspace",
+        "text": "The selected name chooses which sysfs file cat reads.",
+        "anchor": "attribute=rate",
+        "lines": 2,
+        "file": "run-driver.sh"
+      }
+    ]
+  },
   "open-device": {
     "edit": "const char *path =",
     "steps": [

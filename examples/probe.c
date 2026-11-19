@@ -122,6 +122,29 @@ static void events(int fd)
     }
 }
 
+static void reset_and_wait(int fd)
+{
+    const char pending = 'Q';
+    require(write(fd, &pending, 1) == 1 && read_info(fd).queued == 1, "queue a byte");
+    require(ioctl(fd, LAB_RESET) == 0, "reset queue before waiting");
+    struct pollfd watch = { .fd = fd, .events = POLLIN };
+    require(poll(&watch, 1, 0) == 0 && read_info(fd).queued == 0, "verify reset");
+    puts("reset cleared the queue and poll reported no input");
+
+    require(ioctl(fd, LAB_SCHEDULE) == 0, "schedule event");
+    const int timeout_ms = 1000;
+    int result = poll(&watch, 1, timeout_ms);
+    if (result == 0) {
+        puts("poll timed out before the event");
+        return;
+    }
+    char event;
+    require(result == 1 && (watch.revents & POLLIN) &&
+            read(fd, &event, 1) == 1 && event == '!', "receive scheduled event");
+    require(read_info(fd).queued == 0 && poll(&watch, 1, 0) == 0, "verify event drained");
+    puts("scheduled event delivered, queue empty again");
+}
+
 static void control(int fd)
 {
     require(write(fd, payload, sizeof payload - 1) == sizeof payload - 1, "write");
@@ -211,7 +234,7 @@ int main(int argc, char **argv)
     const struct { const char *mode; void (*run)(int); } tests[] = {
         { "io", exchange }, { "nonblock", nonblock }, { "blocking", blocking_read },
         { "events", events }, { "control", control }, { "map", map_snapshot },
-        { "short-write", short_write }
+        { "short-write", short_write }, { "waits-capstone", reset_and_wait }
     };
     if (argc == 2 && !strcmp(argv[1], "interrupt")) {
         interrupted_wait();
@@ -241,6 +264,6 @@ int main(int argc, char **argv)
             return 0;
         }
     }
-    fputs("choose io, nonblock, blocking, interrupt, short-write, events, control, map or capstone\n", stderr);
+    fputs("choose io, nonblock, blocking, interrupt, short-write, events, control, map, waits-capstone or capstone\n", stderr);
     return 1;
 }

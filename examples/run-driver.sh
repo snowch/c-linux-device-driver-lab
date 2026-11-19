@@ -14,7 +14,7 @@ if [ "$(cat .module-inputs 2>/dev/null || :)" != "$module_inputs" ] ||
 fi
 
 case "$mode" in
-    module|parameters|init-error|platform|lifecycle|references) ;;
+    module|parameters|init-error|platform-rate|platform|lifecycle|references) ;;
     open-device)
         echo 'Building the open probe…'
         gcc -std=c11 -Wall -Wextra -Werror /tmp/lesson-input/open-device.c -o open-device
@@ -59,6 +59,11 @@ elif [ "$mode" = init-error ]; then
         test ! -d /sys/module/lab_hello
         echo 'initialisation rejected the empty parameter and left no loaded module'
     fi
+elif [ "$mode" = platform-rate ]; then
+    insmod lab_platform.ko
+    attribute=rate
+    cat "/sys/bus/platform/devices/lab-instrument/$attribute"
+    rmmod lab_platform
 elif [ "$mode" = platform ]; then
     insmod lab_platform.ko
     test -L /sys/bus/platform/devices/lab-instrument/driver

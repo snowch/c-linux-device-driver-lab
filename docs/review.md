@@ -2,7 +2,7 @@
 
 The Sites design guidance and the streaming lab’s UX and learning-design guides informed the workbench. The chapter sequence asks a Linux question, exposes the relevant editable C, shows actual guest output, suggests a small change and asks a separate transfer question. Each lesson links to a primary Linux reference.
 
-The lesson picker, previous and next navigation, and browser drafts were checked on the published single-column workbench. Width checks included 1280, 768, 390 and 320 pixels. `npm run check` validates 16 lessons, source focus locations and the offline inventory. All 16 lesson programs ran successfully in the packaged Alpine guest with external networking disabled.
+The lesson picker, previous and next navigation, and browser drafts were checked on the published single-column workbench. Width checks included 1280, 768, 390 and 320 pixels. `npm run check` validates 18 lessons, source focus locations and the offline inventory. All 16 lesson programs ran successfully in the packaged Alpine guest with external networking disabled.
 
 The course uses a real Alpine x86 guest. The character-device module is an executable program, and the guest's timings depend on the host, browser and emulator. Offline use requires saving the course in that browser profile before disconnecting.
 
@@ -23,3 +23,5 @@ The revision keeps the guided excerpts, offline API notes and focused editor ava
 The page starts the guest, stages all lesson files and runs the check. With the original module inputs it uses the packaged modules. An edit to those inputs triggers a build in the guest. The C probe builds as needed. Run statuses distinguish preparation, program execution, compiler or setup failure and a checked driver outcome. A draft storage failure identifies the available copy and exposes a download of the full edited source. The existing per-lesson and per-file keys keep earlier drafts available, including changes outside a focused section.
 
 Guest input uses the serial console. The hardware keyboard and mouse adapters are disabled so HTML controls keep their keyboard behavior after startup. The image download still streams three parts concurrently and can be cancelled. A clean build, shell commands and resetting Linux are optional tools. All kernel module and device operations in verification use the packaged guest. There is no measurement of physical device behavior, emulator performance under other hosts or learner understanding.
+
+The 4 section capstones completed in the packaged Alpine guest with networking disabled. Build checks verify that each capstone closes its section and links only to earlier lessons in that section. All 18 concept diagrams were checked at desktop and narrow mobile widths.

@@ -51,6 +51,8 @@ export const course = {
     },
     {
       "id": "init-error",
+      "sectionCapstone": true,
+      "buildsOn": ["module-api", "parameters"],
       "section": "Kernel module APIs",
       "title": "Observe a failed module initialisation",
       "file": "run-driver.sh",
@@ -142,6 +144,8 @@ export const course = {
     },
     {
       "id": "references",
+      "sectionCapstone": true,
+      "buildsOn": ["lifecycle", "open-device", "io"],
       "section": "Character devices",
       "title": "Protect a module while a descriptor is open",
       "file": "run-driver.sh",
@@ -231,7 +235,44 @@ export const course = {
       "evidence": "Compare mapped queued and live queued. Note when the probe writes its five bytes relative to the mmap() call."
     },
     {
+      "id": "waits-capstone",
+      "section": "Waits, control and mappings",
+      "sectionCapstone": true,
+      "buildsOn": [
+        "control",
+        "events"
+      ],
+      "title": "Reset a device queue and wait for a scheduled byte",
+      "file": "probe.c",
+      "focus": "const int timeout_ms =",
+      "intro": "Put one byte in the device queue, clear it through ioctl(), then ask the driver to schedule a fresh event.",
+      "question": "What proves that readiness after the wait belongs to the new event?",
+      "task": "Change timeout_ms from 1000 to 0. Rerun and compare the poll result with the starter.",
+      "hint": "The first poll comes after the reset. The second starts after work has been queued for later.",
+      "explanation": "Reset discards the queued byte, making the descriptor unreadable. The scheduled event makes it readable later. A zero timeout checks the current state immediately.",
+      "transfer": "How could the client retry after an immediate timeout and still receive the scheduled byte?",
+      "evidence": "Find the empty reset state, then the delivered event and the empty queue again. The edited run can report an immediate timeout.",
+      "command": "sh /tmp/device-lab/run-driver.sh waits-capstone"
+    },
+    {
+      "id": "platform-rate",
+      "section": "Binding and verification",
+      "title": "Read a platform device attribute",
+      "file": "run-driver.sh",
+      "focus": "    attribute=rate",
+      "intro": "Load the synthetic platform module and read one attribute from its device directory in sysfs.",
+      "question": "What value can userspace read from the rate file after the module loads?",
+      "task": "Change attribute=rate to attribute=uevent. Rerun and look for DRIVER or MODALIAS in the output.",
+      "hint": "The device directory holds attributes with different formats. rate contains a number.",
+      "explanation": "Reading the rate attribute invokes the driver’s show callback. The uevent attribute supplies device metadata instead.",
+      "transfer": "How would you check whether an attribute disappears when the module unloads?",
+      "evidence": "Look for the sample rate 25. The edited run prints device metadata.",
+      "command": "sh /tmp/device-lab/run-driver.sh platform-rate"
+    },
+    {
       "id": "platform",
+      "sectionCapstone": true,
+      "buildsOn": ["platform-rate"],
       "section": "Binding and verification",
       "title": "Bind a synthetic platform driver",
       "intro": "The platform bus matches devices and drivers. This example creates a synthetic device and a driver with the same name. It exposes a sample-rate setting through sysfs without taking measurements from hardware.",

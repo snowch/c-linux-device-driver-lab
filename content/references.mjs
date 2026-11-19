@@ -31,6 +31,8 @@ const delayed = kernel('core-api/workqueue.html#c.schedule_delayed_work', 'sched
 const cancel = kernel('core-api/workqueue.html#c.cancel_delayed_work_sync', 'cancel_delayed_work_sync()', 'Cancel queued work and wait for a running callback to finish before unloading the module.');
 
 export const references = {
+  "waits-capstone": [ioctl, poll, delayed],
+  "platform-rate": [insmod, rmmod, kernel("filesystems/sysfs.html#attributes", "sysfs attributes", "Read one attribute from the device directory.")],
   "open-device": [man("open.2", "open() returns a descriptor you can use in read() and write(), or -1 and errno on error."), man("close.2", "close() releases the descriptor, allowing the runner to remove the module once the last user releases it.")],
   'module-api': [
     moduleInit, moduleExit, insmod, rmmod,

@@ -14,11 +14,13 @@ Capstone sections link back to the smaller exercises and open the complete runna
 
 ## Lessons
 
+Each teaching section ends with a capstone that combines its skills. Each lesson opens with a concept diagram.
+
 ### Kernel module APIs
 
 - [Load a standalone kernel module](https://snowch.github.io/c-linux-device-driver-lab/#module-api)
 - [Pass a parameter when loading a module](https://snowch.github.io/c-linux-device-driver-lab/#parameters)
-- [Observe a failed module initialisation](https://snowch.github.io/c-linux-device-driver-lab/#init-error)
+- [Observe a failed module initialisation](https://snowch.github.io/c-linux-device-driver-lab/#init-error) · Section capstone
 
 ### Character devices
 
@@ -27,7 +29,7 @@ Capstone sections link back to the smaller exercises and open the complete runna
 - [Move bytes through a character device](https://snowch.github.io/c-linux-device-driver-lab/#io)
 - [Handle empty reads and full writes](https://snowch.github.io/c-linux-device-driver-lab/#nonblock)
 - [Retry a short character-device write](https://snowch.github.io/c-linux-device-driver-lab/#short-write)
-- [Protect a module while a descriptor is open](https://snowch.github.io/c-linux-device-driver-lab/#references)
+- [Protect a module while a descriptor is open](https://snowch.github.io/c-linux-device-driver-lab/#references) · Section capstone
 
 ### Waits, control and mappings
 
@@ -36,10 +38,13 @@ Capstone sections link back to the smaller exercises and open the complete runna
 - [Define a userspace ioctl contract](https://snowch.github.io/c-linux-device-driver-lab/#control)
 - [Notify poll from delayed work](https://snowch.github.io/c-linux-device-driver-lab/#events)
 - [Map a read-only snapshot into userspace](https://snowch.github.io/c-linux-device-driver-lab/#map)
+- [Reset a device queue and wait for a scheduled byte](https://snowch.github.io/c-linux-device-driver-lab/#waits-capstone) · Section capstone
 
 ### Platform binding
 
-- [Bind a synthetic platform driver](https://snowch.github.io/c-linux-device-driver-lab/#platform)
+- [Read a platform device attribute](https://snowch.github.io/c-linux-device-driver-lab/#platform-rate)
+- [Bind a synthetic platform driver](https://snowch.github.io/c-linux-device-driver-lab/#platform) · Section capstone
+
 ### Capstone
 
 - [Verify a complete character-device session](https://snowch.github.io/c-linux-device-driver-lab/#capstone)
