@@ -2,6 +2,25 @@ const step = (heading, text, file, anchor, lines) => ({ heading, text, file, anc
 const guide = (edit, ...steps) => ({ edit, steps });
 
 export const walkthroughs = {
+  "open-device": {
+    "edit": "const char *path =",
+    "steps": [
+      {
+        "heading": "Open the device node",
+        "text": "O_RDWR requests both read and write access to the driver.",
+        "anchor": "const char *path =",
+        "lines": 2,
+        "file": "open-device.c"
+      },
+      {
+        "heading": "Check the return value",
+        "text": "For a missing path, the probe prints ENOENT and returns normally so the guest can check removal. It reports other open errors as failures.",
+        "anchor": "if (fd < 0)",
+        "lines": 8,
+        "file": "open-device.c"
+      }
+    ]
+  },
   'module-api': { ...guide(
     'insmod lab_hello.ko',
     step('Connect two functions to the module lifecycle', 'module_init() tells Linux which function to call when loading. module_exit() supplies the cleanup function for unloading.', 'lab_hello.c', 'module_init(hello_init);', 2),

@@ -25,6 +25,24 @@ const html = template.replace(/{{([a-zA-Z]+)}}/g, (_, key) =>
 await writeFile(new URL('index.html', dist), html);
 for (const name of ['cover.webp', 'favicon.ico', 'apple-touch-icon.png'])
   await cp(at('../assets/' + name), new URL(name, dist));
+// The editor replaces these exact source ranges inside the full guest file.
+const editSections = {
+  'module-api': ['if [ "$mode" = module ]; then', 'elif [ "$mode" = parameters ]; then'],
+  parameters: ['elif [ "$mode" = parameters ]; then', 'elif [ "$mode" = init-error ]; then'],
+  'init-error': ['elif [ "$mode" = init-error ]; then', 'elif [ "$mode" = platform ]; then'],
+  lifecycle: ['    if [ "$mode" = lifecycle ]; then', '    elif [ "$mode" = open-device ]; then'],
+  io: ['static const char payload[]', 'static void nonblock(int fd)'],
+  nonblock: ['static void nonblock(int fd)', 'static void blocking_read(int fd)'],
+  'short-write': ['static void short_write(int fd)', 'int main(int argc'],
+  references: ['    elif [ "$mode" = references ]; then', '    else\n        ./probe'],
+  blocking: ['static void blocking_read(int fd)', 'static void events(int fd)'],
+  interrupt: ['static void on_alarm(int number)', 'static void short_write(int fd)'],
+  control: ['static const char payload[]', 'enum { CHUNK'],
+  events: ['static void events(int fd)', 'static void control(int fd)'],
+  map: ['static void map_snapshot(int fd)', 'static void on_alarm(int number)'],
+  platform: ['#define SAMPLE_RATE', 'static int instrument_probe('],
+  capstone: ['    if (argc == 2 && !strcmp(argv[1], "capstone"))', '    for (size_t i = 0; argc == 2']
+};
 const tutorials = {};
 for (const lesson of course.lessons) {
   const guide = walkthroughs[lesson.id];
@@ -47,7 +65,16 @@ for (const lesson of course.lessons) {
     const indent = Math.min(...excerpt.filter(line => line.trim()).map(line => line.match(/^ */)[0].length));
     return { heading, text, file, code: excerpt.map(line => line.slice(indent)).join('\n') };
   }));
-  tutorials[lesson.id] = { ...guide, steps };
+  const section = editSections[lesson.id];
+  let range;
+  if (section) {
+    const start = editSource.indexOf(section[0]);
+    const end = editSource.indexOf(section[1], start + section[0].length);
+    if (start < 0 || end <= start || !editSource.slice(start, end).includes(guide.edit))
+      throw Error('Invalid editable section for ' + lesson.id);
+    range = { start, end };
+  }
+  tutorials[lesson.id] = { ...guide, steps, range };
 }
 await writeFile(new URL('walkthroughs.mjs', dist), 'export const tutorials = ' + JSON.stringify(tutorials) + ';\n');
 await cp(at('../src/style.css'), new URL('style.css', dist));

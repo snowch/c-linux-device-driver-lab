@@ -15,6 +15,10 @@ fi
 
 case "$mode" in
     module|parameters|init-error|platform|lifecycle|references) ;;
+    open-device)
+        echo 'Building the open probe…'
+        gcc -std=c11 -Wall -Wextra -Werror /tmp/lesson-input/open-device.c -o open-device
+        ;;
     *)
         probe_inputs=$(sha256sum probe.c lab_abi.h)
         if [ ! -x probe ] || [ "$(cat .probe-inputs 2>/dev/null || :)" != "$probe_inputs" ]; then
@@ -71,6 +75,8 @@ else
         test -c /dev/lab0
         ls -l /dev/lab0
         grep '^lab_device ' /proc/modules
+    elif [ "$mode" = open-device ]; then
+        ./open-device
     elif [ "$mode" = references ]; then
         hold_device_open=1
         if [ "$hold_device_open" -eq 1 ]; then

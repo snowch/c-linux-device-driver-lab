@@ -47,6 +47,9 @@ for (const lesson of course.lessons) {
     assert(typeof lesson[key] === 'string' && lesson[key].trim(), lesson.id + ': ' + key);
   const path = course.files[lesson.file];
   assert(path, lesson.id + ': active file must exist');
+  assert(offlinePaths.has(path.slice(2)), lesson.id + ': starter must be saved offline');
+  if (lesson.buildsOn)
+    assert(ids.has(lesson.buildsOn), lesson.id + ': smaller example must come first');
   const source = await readFile(new URL(path, dist), 'utf8');
   assert(source.includes(lesson.focus), lesson.id + ': intended code must exist');
 }

@@ -8,6 +8,7 @@ export const course = {
   "summary": "Learn kernel module APIs, character-device operations and synthetic platform binding in a browser Linux guest.",
   "instructions": "Select Run in Linux with the starter files unchanged. The page starts the guest if needed, prepares its modules and builds the C probe when the lesson needs it. Edited module source triggers a build in the guest, which can take several minutes.",
   "files": {
+    "open-device.c": "./examples/open-device.c",
     "lab_hello.c": "./examples/lab_hello.c",
     "lab_device.c": "./examples/lab_device.c",
     "probe.c": "./examples/probe.c",
@@ -79,7 +80,23 @@ export const course = {
       "evidence": "Find /dev/lab0 and lab_device in the first two output lines after the build message. Then read the registered and removed log lines and the final device-removal check."
     },
     {
+      "id": "open-device",
+      "section": "Character devices",
+      "title": "Open the device from userspace",
+      "intro": "The guest loads the driver and the probe calls open() on its device file. A successful call returns a nonnegative file descriptor. On failure, open() returns -1 and sets errno to describe the error.",
+      "question": "How does the result differ when the device file exists and when the path names a missing file?",
+      "evidence": "Find opened /dev/lab0 as descriptor and the final module removal line. The number in the first line identifies the file that the probe opened.",
+      "task": "In open-device.c, replace const char *path = \"/dev/lab0\"; with const char *path = \"/dev/lab-missing\";. Select Run in Linux. Compare the new return value and error with the descriptor from the first run.",
+      "hint": "ENOENT means the path was missing. The probe reports it as an expected observation, so the lesson can still check module removal.",
+      "explanation": "The first run gets a descriptor, closes it and lets the guest remove the module. The second run reports -1 and ENOENT. The guest removes the module in both runs. The next lesson uses a valid descriptor to transfer bytes.",
+      "transfer": "Once the device is open, which Linux calls could send and receive bytes?",
+      "file": "open-device.c",
+      "focus": "const char *path = \"/dev/lab0\";",
+      "command": "sh /tmp/device-lab/run-driver.sh open-device"
+    },
+    {
       "id": "io",
+      "buildsOn": "open-device",
       "section": "Character devices",
       "title": "Move bytes through a character device",
       "intro": "The C probe opens /dev/lab0 and writes five bytes. The driver stores them in a bounded queue. The first byte that was written is the first to be read.",

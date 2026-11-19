@@ -59,6 +59,7 @@
       <p class="section-label" id="section"></p>
       <h1 id="lesson-title" tabindex="-1">{{title}}</h1>
       <p class="lede" id="intro"></p>
+      <p id="builds-on" hidden>Practise opening the device first in <a id="builds-on-link"></a>.</p>
       <p id="question" class="question"></p>
       <section aria-labelledby="walkthrough-heading">
         <h2 id="walkthrough-heading">Walk through the code</h2>
@@ -74,7 +75,9 @@
               <label for="file">Source file</label>
               <select id="file"></select>
               <button type="button" id="restore" hidden>Restore starter</button>
+              <button type="button" id="toggle-file" hidden>Show full file</button>
             </div>
+            <p id="section-note" class="toolbar notice" hidden>This is the editable lesson section. The page includes the rest of the file when it runs.</p>
             <textarea id="source" aria-label="Editable source" spellcheck="false" autocapitalize="off" autocomplete="off" rows="14"></textarea>
             <p id="draft-status" class="toolbar notice" role="status" hidden></p>
             <div class="toolbar" id="draft-backup" hidden><button type="button" id="download-source">Download source</button></div>

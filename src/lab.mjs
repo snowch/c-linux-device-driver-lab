@@ -5,6 +5,7 @@ import { references } from './references.mjs';
 const $ = id => document.getElementById(id);
 const source = $('source');
 const file = $('file');
+const toggleFile = $('toggle-file');
 const terminal = $('terminal');
 const shellOutput = $('shell-output');
 const command = $('command');
@@ -21,7 +22,7 @@ const latestRuns = new Map();
 const earlierRuns = new Map();
 const files = Object.keys(course.files);
 const key = 'linux-lab:' + course.slug + ':';
-let lesson, activeFile, selection = 0, sourceError = '';
+let lesson, activeFile, region, selection = 0, sourceError = '';
 let vm, guestReady = false, resetting = false;
 let activeRun, runNumber = 0, line = '', shellText = '';
 
@@ -68,7 +69,7 @@ function showDraftStatus() {
   notice.hidden = !message;
   $('draft-backup').hidden = message?.saved !== false;
   $('draft-notice').hidden = source.disabled || !files.some(name => valueOf(name) !== defaults.get(name));
-  $('restore').hidden = source.disabled || (source.value === defaults.get(activeFile) && message?.saved !== false);
+  $('restore').hidden = source.disabled || (valueOf(activeFile) === defaults.get(activeFile) && message?.saved !== false);
 }
 function positionSource(needle) {
   const scope = activeFile === lesson.file ? Math.max(0, source.value.indexOf(lesson.focus)) : 0;
@@ -81,23 +82,42 @@ function positionSource(needle) {
   source.scrollTop = Math.max(0, (row - 3) * lineHeight);
   source.scrollLeft = 0;
 }
-function showSource(name) {
+function sectionOf(name, value) {
+  const { editFile = lesson.file, range } = tutorials[lesson.id];
+  if (name !== editFile || !range) return null;
+  const baseline = defaults.get(name);
+  const prefix = baseline.slice(0, range.start);
+  const suffix = baseline.slice(range.end);
+  // Changes outside the section must stay visible in an earlier draft.
+  if (value.length < prefix.length + suffix.length || !value.startsWith(prefix) || !value.endsWith(suffix))
+    return null;
+  return { prefix, suffix };
+}
+function showSource(name, fullFile = false) {
   activeFile = name;
   file.value = name;
-  source.setAttribute('aria-label', 'Editable source · ' + name);
-  source.value = valueOf(name) ?? '';
+  const value = valueOf(name) ?? '';
+  const section = sectionOf(name, value);
+  region = fullFile ? null : section;
+  source.setAttribute('aria-label', (region ? 'Editable lesson section · ' : 'Editable source file · ') + name);
+  source.value = region ? value.slice(region.prefix.length, value.length - region.suffix.length) : value;
+  toggleFile.hidden = !section;
+  toggleFile.textContent = region ? 'Show full file' : 'Show lesson section';
+  $('section-note').hidden = !region;
   source.scrollTop = 0;
   source.scrollLeft = 0;
   if (name === lesson.file) positionSource(lesson.focus);
 }
+toggleFile.onclick = () => {
+  showSource(activeFile, Boolean(region));
+  showDraftStatus();
+};
 $('edit-step').onclick = () => {
   $('program').open = true;
   const tutorial = tutorials[lesson.id];
   const targetFile = tutorial.editFile ?? lesson.file;
-  if (activeFile !== targetFile) {
-    showSource(targetFile);
-    showDraftStatus();
-  }
+  showSource(targetFile);
+  showDraftStatus();
   const edit = tutorial.edit;
   source.focus();
   positionSource(source.value.includes(edit) ? edit : lesson.focus);
@@ -108,8 +128,11 @@ $('program').addEventListener('toggle', () => {
 });
 source.oninput = () => {
   const draft = draftKey();
-  edits.set(draft, source.value);
-  const saved = save(draft, source.value);
+  const text = source.value;
+  const code = region && text && !text.endsWith('\n') ? text + '\n' : text;
+  const value = region ? region.prefix + code + region.suffix : code;
+  edits.set(draft, value);
+  const saved = save(draft, value);
   draftMessages.set(draft, {
     saved,
     text: saved ? 'Draft saved in this browser.' :
@@ -139,7 +162,7 @@ $('restore').onclick = () => {
   source.focus({ preventScroll: true });
 };
 $('download-source').onclick = () => {
-  const url = URL.createObjectURL(new Blob([source.value], { type: 'text/plain' }));
+  const url = URL.createObjectURL(new Blob([valueOf(activeFile)], { type: 'text/plain' }));
   const link = document.createElement('a');
   link.download = activeFile;
   link.href = url;
@@ -205,6 +228,13 @@ async function showLesson(index) {
     instructions:'instructions', task:'task', hint:'hint', explanation:'explanation',
     transfer:'transfer'
   })) $(id).textContent = lesson[field] ?? course[field] ?? '';
+  const starter = course.lessons.find(item => item.id === lesson.buildsOn);
+  $('builds-on').hidden = !starter;
+  if (starter) {
+    const link = $('builds-on-link');
+    link.href = '#' + starter.id;
+    link.textContent = starter.title;
+  }
   showReferences(lesson.id);
   picker.value = lesson.id;
   $('next-lesson').replaceChildren();
@@ -219,14 +249,14 @@ async function showLesson(index) {
   file.disabled = true;
   $('edit-step').disabled = true;
   source.value = '';
-  file.value = lesson.file;
+  file.value = tutorial.editFile ?? lesson.file;
   openComparison();
   showDraftStatus();
   showRun();
   const sourceReady = await starterFiles;
   if (selection !== thisSelection) return;
   if (sourceReady) {
-    showSource(lesson.file);
+    showSource(tutorial.editFile ?? lesson.file);
     source.disabled = false;
     file.disabled = false;
     $('edit-step').disabled = false;
