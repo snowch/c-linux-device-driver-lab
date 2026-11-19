@@ -1,4 +1,5 @@
 import { course } from './course.mjs';
+import { tutorials } from './walkthroughs.mjs';
 
 const $ = id => document.getElementById(id);
 const source = $('source');
@@ -54,27 +55,47 @@ function valueOf(name) {
   const draft = draftKey(name);
   return edits.get(draft) ?? read(draft) ?? defaults.get(name);
 }
+function positionSource(needle) {
+  const scope = activeFile === lesson.file ? Math.max(0, source.value.indexOf(lesson.focus)) : 0;
+  const afterFocus = source.value.indexOf(needle, scope);
+  const start = afterFocus >= 0 ? afterFocus : source.value.indexOf(needle);
+  if (start < 0) return;
+  source.setSelectionRange(start, start);
+  const row = source.value.slice(0, start).split('\n').length;
+  const lineHeight = parseFloat(getComputedStyle(source).lineHeight);
+  source.scrollTop = Math.max(0, (row - 3) * lineHeight);
+  source.scrollLeft = 0;
+}
+function showDraftNotice() {
+  $('draft-notice').hidden = !files.some(name => valueOf(name) !== defaults.get(name));
+}
 function showSource(name) {
   activeFile = name;
   file.value = name;
   source.value = valueOf(name) ?? '';
   source.scrollTop = 0;
   source.scrollLeft = 0;
-  const needle = lesson.focus;
-  if (needle && name === lesson.file) {
-    const start = source.value.indexOf(needle);
-    if (start >= 0) {
-      source.setSelectionRange(start, start);
-      const row = source.value.slice(0, start).split('\n').length;
-      const lineHeight = parseFloat(getComputedStyle(source).lineHeight);
-      source.scrollTop = Math.max(0, (row - 4) * lineHeight);
-    }
-  }
+  if (name === lesson.file) positionSource(lesson.focus);
+  showDraftNotice();
 }
+$('edit-step').onclick = () => {
+  $('program').open = true;
+  const tutorial = tutorials[lesson.id];
+  const targetFile = tutorial.editFile ?? lesson.file;
+  if (activeFile !== targetFile) showSource(targetFile);
+  const edit = tutorial.edit;
+  source.focus();
+  positionSource(source.value.includes(edit) ? edit : lesson.focus);
+};
+$('program').addEventListener('toggle', () => {
+  if ($('program').open && document.activeElement !== source && activeFile === lesson.file)
+    positionSource(lesson.focus);
+});
 source.oninput = () => {
   const draft = draftKey(activeFile);
   edits.set(draft, source.value);
   save(draft, source.value);
+  showDraftNotice();
 };
 file.onchange = () => showSource(file.value);
 $('restore').onclick = () => {
@@ -100,10 +121,33 @@ picker.onchange = () => { location.hash = picker.value; };
 async function showLesson(index) {
   lesson = course.lessons[index];
   const thisSelection = ++selection;
+  const tutorial = tutorials[lesson.id];
+  $('program').open = false;
+  $('draft-notice').hidden = true;
+  $('intro').textContent = tutorial.goal;
+  $('read-result').textContent = tutorial.look;
+  $('walkthrough').replaceChildren(...tutorial.steps.map(step => {
+    const item = document.createElement('li');
+    const title = document.createElement('h3');
+    const description = document.createElement('p');
+    const sample = document.createElement('pre');
+    sample.tabIndex = 0;
+    const code = document.createElement('code');
+    title.textContent = step.heading;
+    description.textContent = step.text;
+    code.textContent = step.code;
+    sample.append(code);
+    const file = document.createElement('figcaption');
+    const excerpt = document.createElement('figure');
+    file.textContent = step.file;
+    excerpt.append(file, sample);
+    item.append(title, description, excerpt);
+    return item;
+  }));
   document.title = lesson.title + ' · ' + course.title;
   for (const [id, field] of Object.entries({
-    'lesson-title':'title', section:'section', intro:'intro', question:'question',
-    instructions:'instructions', task:'task', hint:'hint', explanation:'explanation',
+    'lesson-title':'title', section:'section', question:'question',
+    task:'task', hint:'hint', explanation:'explanation',
     transfer:'transfer'
   })) $(id).textContent = lesson[field] ?? course[field];
   const reference = $('reference');
@@ -119,10 +163,12 @@ async function showLesson(index) {
     $('next-lesson').append(link);
   }
   source.disabled = true;
+  $('edit-step').disabled = true;
   runButton.disabled = buildButton.disabled = true;
   if (await starterFiles && selection === thisSelection) {
     showSource(lesson.file ?? files[0]);
     source.disabled = false;
+    $('edit-step').disabled = false;
     runButton.disabled = buildButton.disabled = running;
   }
 }
@@ -184,7 +230,8 @@ function receive(byte) {
         return;
       }
     }
-    terminalText = (terminalText + completed + '\n').slice(-32000);
+    if (!(resultMarker && completed.includes(resultMarker) && completed.includes('sh /exchange/run-')))
+      terminalText = (terminalText + completed + '\n').slice(-32000);
     line = '';
   } else if (byte === 8) {
     line = line.slice(0, -1);
@@ -341,9 +388,10 @@ async function runExercise(forceBuild) {
     const clean = modules.files.map(name => name.slice(0, -3)).flatMap(name =>
       ['.ko', '.o', '.mod.o'].map(extension => '/tmp/device-lab/' + name + extension));
     clean.push('/tmp/device-lab/.module-common.o');
+    const stampModules = '(cd /tmp/device-lab && sha256sum ' + modules.inputs.join(' ') + ' > .module-inputs)';
     const moduleSetup = starter
       ? [...modules.files.map((name, index) => `cp ${moduleFiles[index]} /tmp/device-lab/${name}`),
-        "echo 'Using the precompiled starter modules.'"]
+        stampModules, "echo 'Using the precompiled starter modules.'"]
       : forceBuild ? ['rm -f ' + clean.join(' ')] : [];
     const script = [...setup, course.prepare, ...moduleSetup, current.command].join('\n') + '\n';
     await vm.create_file(prefix + 'exercise.sh', encoder.encode(script));

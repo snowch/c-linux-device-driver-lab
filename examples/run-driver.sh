@@ -4,12 +4,13 @@ mode=${1:?choose a driver exercise}
 trap 'exec 9>&-; rmmod lab_hello 2>/dev/null || :; rmmod lab_device 2>/dev/null || :; rmmod lab_platform 2>/dev/null || :' EXIT
 trap 'exit 130' INT TERM
 cd /tmp/device-lab
+module_inputs=$(sha256sum lab_device.c lab_platform.c lab_abi.h Makefile lab_hello.c)
 if [ ! -f lab_device.ko ] || [ ! -f lab_platform.ko ] || [ ! -f lab_hello.ko ] ||
-   [ lab_device.c -nt lab_device.ko ] || [ lab_platform.c -nt lab_platform.ko ] ||
-   [ lab_hello.c -nt lab_hello.ko ] ||
-   [ lab_abi.h -nt lab_device.ko ] || [ Makefile -nt lab_device.ko ]; then
+   [ ! -f .module-inputs ] || [ "$module_inputs" != "$(cat .module-inputs)" ]; then
     echo 'Building modules with the guest kernel build tree…'
+    rm -f lab_device.o lab_platform.o lab_hello.o
     make -s -C "/lib/modules/$(uname -r)/build" M="$PWD" modules
+    printf '%s\n' "$module_inputs" > .module-inputs
 else
     echo 'Using modules built from the current source.'
 fi
@@ -69,9 +70,11 @@ else
             echo 'no descriptor held before unload'
         fi
     else
-        if [ ! -x probe ] || [ probe.c -nt probe ] || [ lab_abi.h -nt probe ]; then
+        probe_inputs=$(sha256sum probe.c lab_abi.h)
+        if [ ! -x probe ] || [ ! -f .probe-inputs ] || [ "$probe_inputs" != "$(cat .probe-inputs)" ]; then
             gcc -std=c11 -Wall -Wextra -Werror probe.c -o probe.next
             mv probe.next probe
+            printf '%s\n' "$probe_inputs" > .probe-inputs
         fi
         ./probe "$mode"
     fi

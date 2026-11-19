@@ -26,10 +26,10 @@ export const course = {
       "focus": "static int __init hello_init",
       "intro": "A kernel module adds code to a running Linux kernel. This introduction starts with module_init() and module_exit(). The standalone example writes kernel messages before later lessons introduce character devices.",
       "question": "Which callback runs during insmod, and which runs during rmmod?",
-      "task": "Change the initial label from hello to ready. Select Build from source and check the init and exit lines in the console.",
-      "hint": "pr_info() writes to the kernel log. The harness reads that log after unloading the module.",
-      "explanation": "insmod calls hello_init(). Returning zero leaves the module loaded. rmmod calls hello_exit() before removing it from the module list.",
-      "transfer": "How could you tell whether a module was loaded if its init function printed no message?",
+      "task": "In run-driver.sh, add label=ready after the first insmod lab_hello.ko. Run again and find ready in both lifecycle messages.",
+      "hint": "Arguments after the module filename set load parameters before the initialisation callback runs.",
+      "explanation": "The same module loads and unloads. Both callbacks report ready because insmod supplied that label when loading it. Build from source is available when you are ready to change the module itself.",
+      "transfer": "How could the loader confirm a module was loaded even if its init function printed nothing?",
       "reference": [
         "Read the kernel guide to external modules",
         "https://docs.kernel.org/kbuild/modules.html"
