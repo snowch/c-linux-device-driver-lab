@@ -6,7 +6,7 @@ Copyright © 2026 Christopher Snow.
 
 Open the device from a small userspace program before transferring bytes. The editor shows the section used in the exercise, with a full-file option. Linux builds and runs the complete driver with those edits.
 
-Each lesson includes editable C source, a runnable experiment, a code change, a hint and a transfer question. **Run in Linux** compiles the source with GCC and executes it in a self-hosted Alpine Linux guest using WebAssembly. The browser saves source changes per lesson. Reset Linux starts a fresh guest and keeps the editor changes.
+Each lesson includes editable source, a runnable experiment, a code change, a hint and a transfer question. **Run in Linux** starts the Alpine guest if needed, builds the required source and runs the check. The browser saves source per lesson when storage is available. **Reset Linux** clears the guest’s temporary files and keeps the editor changes.
 
 Choose **Download for offline use** before disconnecting. Save roughly 145 MB of free browser storage for this course. Open the same URL in the same browser profile after the page reports **Available offline**. The lesson files, editor, compiler, kernel and runtime are included. External documentation requires an internet connection. HTTPS or localhost and a browser with WebAssembly and service workers are required.
 

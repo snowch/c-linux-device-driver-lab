@@ -30,15 +30,15 @@ const editSections = {
   'module-api': ['if [ "$mode" = module ]; then', 'elif [ "$mode" = parameters ]; then'],
   parameters: ['elif [ "$mode" = parameters ]; then', 'elif [ "$mode" = init-error ]; then'],
   'init-error': ['elif [ "$mode" = init-error ]; then', 'elif [ "$mode" = platform ]; then'],
-  lifecycle: ['static int __init lab_init(void)', 'static void __exit lab_exit(void)'],
+  lifecycle: ['    if [ "$mode" = lifecycle ]; then', '    elif [ "$mode" = open-device ]; then'],
   io: ['static const char payload[]', 'static void nonblock(int fd)'],
-  nonblock: ['#define CAPACITY', 'static ssize_t lab_write('],
+  nonblock: ['static void nonblock(int fd)', 'static void blocking_read(int fd)'],
   'short-write': ['static void short_write(int fd)', 'int main(int argc'],
-  references: ['    elif [ "$mode" = references ]; then', '    else\n        probe_inputs='],
+  references: ['    elif [ "$mode" = references ]; then', '    else\n        ./probe'],
   blocking: ['static void blocking_read(int fd)', 'static void events(int fd)'],
   interrupt: ['static void on_alarm(int number)', 'static void short_write(int fd)'],
-  control: ['#define CAPACITY', 'static DEFINE_KFIFO('],
-  events: ['#define DELAY_MS', 'static DEFINE_KFIFO('],
+  control: ['static const char payload[]', 'enum { CHUNK'],
+  events: ['static void events(int fd)', 'static void control(int fd)'],
   map: ['static void map_snapshot(int fd)', 'static void on_alarm(int number)'],
   platform: ['#define SAMPLE_RATE', 'static int instrument_probe('],
   capstone: ['    if (argc == 2 && !strcmp(argv[1], "capstone"))', '    for (size_t i = 0; argc == 2']
@@ -46,7 +46,7 @@ const editSections = {
 const tutorials = {};
 for (const lesson of course.lessons) {
   const guide = walkthroughs[lesson.id];
-  if (!guide?.goal || !guide.look || !guide.edit || guide.steps?.length < 2)
+  if (!guide?.edit || guide.steps?.length < 2)
     throw Error('Incomplete walkthrough for ' + lesson.id);
   const editSource = await readFile(at('../' + course.files[guide.editFile ?? lesson.file]), 'utf8');
   if (!editSource.includes(guide.edit)) throw Error('Missing edit target for ' + lesson.id);

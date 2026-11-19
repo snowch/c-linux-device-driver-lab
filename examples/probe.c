@@ -58,13 +58,23 @@ static void nonblock(int fd)
     char *data = calloc(info.capacity, 1);
     require(data != NULL, "calloc");
     require(write(fd, data, info.capacity) == (ssize_t)info.capacity, "fill queue");
-    require(write(fd, "x", 1) == -1 && errno == EAGAIN, "expected EAGAIN on full");
-    printf("full nonblocking write: EAGAIN after %u bytes\n", info.capacity);
+    const int make_room = 0;
+    if (make_room)
+        require(read(fd, &value, 1) == 1, "make room");
+    ssize_t written = write(fd, "x", 1);
+    if (make_room) {
+        require(written == 1, "expected progress after reading");
+        puts("nonblocking write after reading one byte: wrote 1 byte");
+    } else {
+        require(written == -1 && errno == EAGAIN, "expected EAGAIN on full");
+        printf("full nonblocking write: EAGAIN after %u bytes\n", info.capacity);
+    }
     free(data);
 }
 
 static void blocking_read(int fd)
 {
+    const char expected_byte = 'X';
     int ready[2];
     require(pipe(ready) == 0, "pipe");
     pid_t reader = fork();
@@ -75,9 +85,9 @@ static void blocking_read(int fd)
         if (input < 0 || write(ready[1], "r", 1) != 1)
             _exit(1);
         char value;
-        int ok = read(input, &value, 1) == 1 && value == 'X';
+        int ok = read(input, &value, 1) == 1 && value == expected_byte;
         if (ok)
-            puts("blocked reader returned X");
+            printf("blocked reader returned %c\n", value);
         fflush(stdout);
         _exit(ok ? 0 : 1);
     }
@@ -90,7 +100,7 @@ static void blocking_read(int fd)
     require(waitpid(reader, &status, WNOHANG) == 0, "reader exited before write");
     puts("reader still waiting with an empty queue");
     fflush(stdout);
-    require(write(fd, "X", 1) == 1, "wake reader");
+    require(write(fd, &expected_byte, 1) == 1, "wake reader");
     require(waitpid(reader, &status, 0) == reader &&
             WIFEXITED(status) && WEXITSTATUS(status) == 0, "wait for reader");
 }
@@ -105,6 +115,11 @@ static void events(int fd)
     char value;
     require(read(fd, &value, 1) == 1 && value == '!', "read event");
     printf("delayed work woke poll and delivered %c\n", value);
+    const int check_drained = 0;
+    if (check_drained) {
+        require(poll(&item, 1, 0) == 0, "device still readable after consuming event");
+        puts("after reading the event: poll returned 0");
+    }
 }
 
 static void control(int fd)
@@ -205,9 +220,14 @@ int main(int argc, char **argv)
     if (argc == 2 && !strcmp(argv[1], "capstone")) {
         int fd = open("/dev/lab0", O_RDWR | O_NONBLOCK | O_CLOEXEC);
         require(fd >= 0, "open /dev/lab0");
+        struct lab_info before = read_info(fd);
+        printf("queue at start: %u of %u bytes\n", before.queued, before.capacity);
+        require(before.queued == 0, "device was not empty at start");
         exchange(fd);
         events(fd);
-        require(read_info(fd).queued == 0, "device did not drain");
+        struct lab_info after = read_info(fd);
+        printf("queue at end: %u of %u bytes\n", after.queued, after.capacity);
+        require(after.queued == 0, "device did not drain");
         close(fd);
         puts("verified round trip, readiness notification and empty final state");
         return 0;
