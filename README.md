@@ -14,7 +14,7 @@ Capstone sections link back to the smaller exercises and open the complete runna
 
 ## Lessons
 
-Each teaching section ends with a capstone that combines its skills. Each lesson opens with a concept diagram.
+Each teaching section ends with a capstone that combines its skills. Diagrams show where bytes wait in a driver, why a reader wakes, and where requests cross between user space and the kernel.
 
 ### Kernel module APIs
 
