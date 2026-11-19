@@ -286,10 +286,13 @@ async function runExercise(forceBuild) {
       }
       setup[1] = `trap 'rm -f ${[...temporary, ...moduleFiles, scriptName].join(' ')}' EXIT`;
     }
+    const clean = ['lab_device', 'lab_platform'].flatMap(name =>
+      ['.ko', '.o', '.mod.o'].map(extension => '/tmp/device-lab/' + name + extension));
+    clean.push('/tmp/device-lab/.module-common.o');
     const moduleSetup = starter
       ? [...modules.files.map((name, index) => `cp ${moduleFiles[index]} /tmp/device-lab/${name}`),
         "echo 'Using the precompiled starter modules.'"]
-      : forceBuild ? ['rm -f /tmp/device-lab/lab_device.ko /tmp/device-lab/lab_platform.ko'] : [];
+      : forceBuild ? ['rm -f ' + clean.join(' ')] : [];
     const script = [...setup, course.prepare, ...moduleSetup, current.command].join('\n') + '\n';
     await vm.create_file(prefix + 'exercise.sh', encoder.encode(script));
     terminalText = '';
