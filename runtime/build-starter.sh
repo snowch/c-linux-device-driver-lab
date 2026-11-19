@@ -8,7 +8,7 @@ work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 cp -a "$kernel_headers" "$work/headers"
 mkdir "$work/examples"
-for name in lab_device.c lab_platform.c lab_abi.h Makefile; do
+for name in lab_device.c lab_platform.c lab_hello.c lab_abi.h Makefile; do
   cp "$root/examples/$name" "$work/examples/"
 done
 cd "$work/headers"
@@ -19,6 +19,6 @@ cc -O2 -I scripts/include -I scripts/mod scripts/mod/modpost.c \
 # not rely on its entropy instrumentation, and the x86-64 host cannot load it.
 make ARCH=x86 GCC_PLUGINS_CFLAGS= M="$work/examples" modules
 mkdir -p "$root/runtime/files/starter"
-for name in lab_device lab_platform; do
+for name in lab_device lab_platform lab_hello; do
   strip --strip-debug "$work/examples/$name.ko" -o "$root/runtime/files/starter/$name.ko"
 done

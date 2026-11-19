@@ -280,7 +280,7 @@ async function runExercise(forceBuild) {
       }
       setup[1] = `trap 'rm -f ${[...temporary, ...moduleFiles, scriptName].join(' ')}' EXIT`;
     }
-    const clean = ['lab_device', 'lab_platform'].flatMap(name =>
+    const clean = modules.files.map(name => name.slice(0, -3)).flatMap(name =>
       ['.ko', '.o', '.mod.o'].map(extension => '/tmp/device-lab/' + name + extension));
     clean.push('/tmp/device-lab/.module-common.o');
     const moduleSetup = starter

@@ -2,11 +2,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include "lab_abi.h"
@@ -129,13 +131,77 @@ static void map_snapshot(int fd)
     require(munmap((void *)mapped, (size_t)size) == 0, "munmap");
 }
 
+static void on_alarm(int number)
+{
+    (void)number;
+}
+
+static void interrupted_wait(void)
+{
+    int fd = open("/dev/lab0", O_RDONLY | O_CLOEXEC);
+    require(fd >= 0, "open blocking descriptor");
+    const int restart_reads = 0;
+    struct sigaction action = {
+        .sa_handler = on_alarm, .sa_flags = restart_reads ? SA_RESTART : 0
+    };
+    sigemptyset(&action.sa_mask);
+    require(sigaction(SIGALRM, &action, NULL) == 0, "install handler");
+    /* If read is restarted, another process makes the wait finish. */
+    pid_t sender = fork();
+    require(sender >= 0, "fork writer");
+    if (sender == 0) {
+        alarm(3);
+        usleep(250000);
+        int output = open("/dev/lab0", O_WRONLY | O_CLOEXEC);
+        _exit(output >= 0 && write(output, "R", 1) == 1 ? 0 : 1);
+    }
+    struct itimerval alarm_time = { .it_value = { .tv_usec = 50000 } };
+    require(setitimer(ITIMER_REAL, &alarm_time, NULL) == 0, "arm interrupt");
+    char byte;
+    ssize_t count = read(fd, &byte, 1);
+    if (restart_reads) {
+        require(count == 1 && byte == 'R', "expected restarted read");
+        puts("read restarted and returned R");
+    } else {
+        require(count == -1 && errno == EINTR, "expected interrupted read");
+        puts("empty blocking read returned EINTR");
+    }
+    int status;
+    require(waitpid(sender, &status, 0) == sender && WIFEXITED(status) && WEXITSTATUS(status) == 0,
+            "writer exited");
+    close(fd);
+}
+
+static void short_write(int fd)
+{
+    struct lab_info info = read_info(fd);
+    const size_t extra = 3;
+    size_t length = info.capacity + extra;
+    char *data = malloc(length);
+    require(data != NULL, "allocate source");
+    memset(data, 'a', length);
+    ssize_t accepted = write(fd, data, length);
+    require(accepted == (ssize_t)info.capacity, "expected a short positive write");
+    printf("requested %zu bytes, accepted %zd, remaining %zu\n",
+           length, accepted, length - (size_t)accepted);
+    require(read(fd, data, info.capacity) == (ssize_t)info.capacity, "drain queue");
+    require(write(fd, data + accepted, length - (size_t)accepted) == (ssize_t)extra, "retry remainder");
+    printf("retry queued %u bytes\n", read_info(fd).queued);
+    free(data);
+}
+
 int main(int argc, char **argv)
 {
     alarm(10);
     const struct { const char *mode; void (*run)(int); } tests[] = {
         { "io", exchange }, { "nonblock", nonblock }, { "blocking", blocking_read },
-        { "events", events }, { "control", control }, { "map", map_snapshot }
+        { "events", events }, { "control", control }, { "map", map_snapshot },
+        { "short-write", short_write }
     };
+    if (argc == 2 && !strcmp(argv[1], "interrupt")) {
+        interrupted_wait();
+        return 0;
+    }
     if (argc == 2 && !strcmp(argv[1], "capstone")) {
         int fd = open("/dev/lab0", O_RDWR | O_NONBLOCK | O_CLOEXEC);
         require(fd >= 0, "open /dev/lab0");
@@ -155,6 +221,6 @@ int main(int argc, char **argv)
             return 0;
         }
     }
-    fputs("choose io, nonblock, blocking, events, control, map or capstone\n", stderr);
+    fputs("choose io, nonblock, blocking, interrupt, short-write, events, control, map or capstone\n", stderr);
     return 1;
 }

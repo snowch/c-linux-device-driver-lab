@@ -1,9 +1,10 @@
 export const course = {
   "slug": "c-linux-device-driver-lab",
-  "title": "C Linux Device Driver Lab",
-  "summary": "Kernel modules, character devices, userspace ABI, readiness, workqueues and platform binding.",
+  "title": "Introduction to Linux Device Drivers in C",
+  "summary": "Learn kernel module APIs, character-device operations and synthetic platform binding in a browser Linux guest.",
   "instructions": "Run in Linux loads the selected module and runs its check. The unchanged starter modules are already compiled for this guest. Edits to a module trigger Kbuild. Build from source forces a clean module build, which can take several minutes.",
   "files": {
+    "lab_hello.c": "./examples/lab_hello.c",
     "lab_device.c": "./examples/lab_device.c",
     "probe.c": "./examples/probe.c",
     "lab_abi.h": "./examples/lab_abi.h",
@@ -11,13 +12,67 @@ export const course = {
     "Makefile": "./examples/Makefile",
     "run-driver.sh": "./examples/run-driver.sh"
   },
-  "prepare": "mkdir -p /tmp/device-lab\ncmp -s /tmp/lesson-input/lab_device.c /tmp/device-lab/lab_device.c || cp /tmp/lesson-input/lab_device.c /tmp/device-lab/lab_device.c\ncmp -s /tmp/lesson-input/probe.c /tmp/device-lab/probe.c || cp /tmp/lesson-input/probe.c /tmp/device-lab/probe.c\ncmp -s /tmp/lesson-input/lab_abi.h /tmp/device-lab/lab_abi.h || cp /tmp/lesson-input/lab_abi.h /tmp/device-lab/lab_abi.h\ncmp -s /tmp/lesson-input/lab_platform.c /tmp/device-lab/lab_platform.c || cp /tmp/lesson-input/lab_platform.c /tmp/device-lab/lab_platform.c\ncmp -s /tmp/lesson-input/Makefile /tmp/device-lab/Makefile || cp /tmp/lesson-input/Makefile /tmp/device-lab/Makefile\ncmp -s /tmp/lesson-input/run-driver.sh /tmp/device-lab/run-driver.sh || cp /tmp/lesson-input/run-driver.sh /tmp/device-lab/run-driver.sh",
+  "prepare": "mkdir -p /tmp/device-lab\ncmp -s /tmp/lesson-input/lab_device.c /tmp/device-lab/lab_device.c || cp /tmp/lesson-input/lab_device.c /tmp/device-lab/lab_device.c\ncmp -s /tmp/lesson-input/probe.c /tmp/device-lab/probe.c || cp /tmp/lesson-input/probe.c /tmp/device-lab/probe.c\ncmp -s /tmp/lesson-input/lab_abi.h /tmp/device-lab/lab_abi.h || cp /tmp/lesson-input/lab_abi.h /tmp/device-lab/lab_abi.h\ncmp -s /tmp/lesson-input/lab_platform.c /tmp/device-lab/lab_platform.c || cp /tmp/lesson-input/lab_platform.c /tmp/device-lab/lab_platform.c\ncmp -s /tmp/lesson-input/Makefile /tmp/device-lab/Makefile || cp /tmp/lesson-input/Makefile /tmp/device-lab/Makefile\ncmp -s /tmp/lesson-input/run-driver.sh /tmp/device-lab/run-driver.sh || cp /tmp/lesson-input/run-driver.sh /tmp/device-lab/run-driver.sh\ncmp -s /tmp/lesson-input/lab_hello.c /tmp/device-lab/lab_hello.c || cp /tmp/lesson-input/lab_hello.c /tmp/device-lab/lab_hello.c",
   "lessons": [
     {
+      "id": "module-api",
+      "section": "Kernel module APIs",
+      "title": "Load a standalone kernel module",
+      "file": "lab_hello.c",
+      "focus": "static int __init hello_init",
+      "intro": "A kernel module adds code to a running Linux kernel. This introduction starts with module_init() and module_exit(). The standalone example writes kernel messages before later lessons introduce character devices.",
+      "question": "Which callback runs during insmod, and which runs during rmmod?",
+      "task": "Change the initial label from hello to ready. Select Build from source and check the init and exit lines in the console.",
+      "hint": "pr_info() writes to the kernel log. The harness reads that log after unloading the module.",
+      "explanation": "insmod calls hello_init(). Returning zero leaves the module loaded. rmmod calls hello_exit() before removing it from the module list.",
+      "transfer": "How could you tell whether a module was loaded if its init function printed no message?",
+      "reference": [
+        "Read the kernel guide to external modules",
+        "https://docs.kernel.org/kbuild/modules.html"
+      ],
+      "command": "sh /tmp/device-lab/run-driver.sh module"
+    },
+    {
+      "id": "parameters",
+      "section": "Kernel module APIs",
+      "title": "Pass a parameter when loading a module",
+      "file": "run-driver.sh",
+      "focus": "    label=guest",
+      "intro": "module_param() declares a value that insmod can pass before initialisation. This lab declares a string parameter with read-only permissions in sysfs.",
+      "question": "Which value will appear in sysfs when the load command supplies label=guest?",
+      "task": "Change label=guest in run-driver.sh to label=browser. Run and check the value read from sysfs.",
+      "hint": "The default label in lab_hello.c is used when insmod receives no override.",
+      "explanation": "The supplied value is set before hello_init() runs. While loaded, the module exposes the configured value through its parameter file.",
+      "transfer": "How could you show the default and the supplied value in two runs without recompiling the module?",
+      "reference": [
+        "Read the kernel parameter interface",
+        "https://docs.kernel.org/admin-guide/kernel-parameters.html"
+      ],
+      "command": "sh /tmp/device-lab/run-driver.sh parameters"
+    },
+    {
+      "id": "init-error",
+      "section": "Kernel module APIs",
+      "title": "Observe a failed module initialisation",
+      "file": "run-driver.sh",
+      "focus": "    label=\n",
+      "intro": "A kernel initialisation function returns zero on success or a negative errno on failure. The hello module returns -EINVAL when its parameter is empty.",
+      "question": "If init rejects the load, does a registered module remain for rmmod to remove?",
+      "task": "Change the empty label assignment in the init-error branch to label=valid. Run and compare the two outcomes.",
+      "hint": "The harness tests /sys/module/lab_hello after insmod and unloads the module if initialisation succeeds.",
+      "explanation": "An empty label makes insmod fail before the module is left loaded. A valid label permits registration and normal cleanup on unload.",
+      "transfer": "If init allocated a resource before a later failure, where would you release that resource?",
+      "reference": [
+        "Read the kernel driver API",
+        "https://docs.kernel.org/driver-api/basics.html"
+      ],
+      "command": "sh /tmp/device-lab/run-driver.sh init-error"
+    },
+    {
       "id": "lifecycle",
-      "section": "Modules and character devices",
-      "title": "Load and unload a kernel module",
-      "intro": "A loadable module extends a running Linux kernel. The lab uses matching kernel headers and builds the module in the guest with Kbuild.",
+      "section": "Character devices",
+      "title": "Register and remove a character device",
+      "intro": "The lab_device module registers a character device. Its file operations let an open descriptor call into the driver, and devtmpfs exposes the device as /dev/lab0.",
       "question": "What changes in /dev and /proc/modules while the module is loaded?",
       "focus": "static int __init lab_init",
       "task": "Change the module’s registration message in lab_init(). Run again, then enter dmesg | tail -12 in the Linux shell to see it.",
@@ -33,7 +88,7 @@ export const course = {
     },
     {
       "id": "io",
-      "section": "Modules and character devices",
+      "section": "Character devices",
       "title": "Move bytes through a character device",
       "intro": "A character device exposes operations through a file descriptor. This driver stores bytes in a bounded FIFO, where the earliest written byte is read first.",
       "question": "How many read calls will the probe need for a five-byte message when it requests two per call?",
@@ -51,7 +106,7 @@ export const course = {
     },
     {
       "id": "nonblock",
-      "section": "Modules and character devices",
+      "section": "Character devices",
       "title": "Handle empty reads and full writes",
       "intro": "O_NONBLOCK lets a caller avoid waiting. The driver reports EAGAIN for an empty read or a write to a full queue.",
       "question": "How much data can the app enqueue before a further write would block?",
@@ -66,6 +121,42 @@ export const course = {
       ],
       "command": "sh /tmp/device-lab/run-driver.sh nonblock",
       "file": "lab_device.c"
+    },
+    {
+      "id": "short-write",
+      "section": "Character devices",
+      "title": "Retry a short character-device write",
+      "file": "probe.c",
+      "focus": "static void short_write",
+      "intro": "A character device with a bounded queue can accept only part of a write. A positive return value is the number of bytes consumed by that call.",
+      "question": "How many bytes remain after a write larger than the entire queue?",
+      "task": "Change extra from 3 to 7. Run and compare the first accepted count and the number queued after the retry.",
+      "hint": "The probe queries the queue capacity and drains the accepted bytes before retrying.",
+      "explanation": "The first write consumes up to capacity. The probe advances its pointer by the accepted count and submits only the remaining bytes.",
+      "transfer": "What extra branch would you need if a nonblocking write returned EAGAIN before accepting any bytes?",
+      "reference": [
+        "Read write(2)",
+        "https://man7.org/linux/man-pages/man2/write.2.html"
+      ],
+      "command": "sh /tmp/device-lab/run-driver.sh short-write"
+    },
+    {
+      "id": "references",
+      "section": "Character devices",
+      "title": "Protect a module while a descriptor is open",
+      "file": "run-driver.sh",
+      "focus": "        hold_device_open=1",
+      "intro": "The owner field of the device operations holds a module reference while its file is open. This reference prevents removing code that a process can still call.",
+      "question": "Can rmmod remove a driver while the shell holds its device open?",
+      "task": "Change hold_device_open from 1 to 0. Run and compare the path to successful unload.",
+      "hint": "The shell opens descriptor 9 and keeps it live during the first unload attempt.",
+      "explanation": "The first unload is refused while the open descriptor pins the module. Closing that descriptor lets the normal unload succeed.",
+      "transfer": "Why could a duplicated descriptor prevent unload even after the original descriptor was closed?",
+      "reference": [
+        "Read the kernel driver basics",
+        "https://docs.kernel.org/driver-api/basics.html"
+      ],
+      "command": "sh /tmp/device-lab/run-driver.sh references"
     },
     {
       "id": "blocking",
@@ -84,6 +175,24 @@ export const course = {
       ],
       "file": "probe.c",
       "command": "sh /tmp/device-lab/run-driver.sh blocking"
+    },
+    {
+      "id": "interrupt",
+      "section": "Waits, control and mappings",
+      "title": "Interrupt a blocking device read with a signal",
+      "file": "probe.c",
+      "focus": "static void interrupted_wait",
+      "intro": "An interruptible driver wait can return when a userspace signal arrives. A signal handler with SA_RESTART may let the kernel restart the interrupted read.",
+      "question": "What does userspace observe if an alarm arrives while an empty read is blocked?",
+      "task": "Change restart_reads from 0 to 1. Run and compare the return from the read when the writer supplies a later byte.",
+      "hint": "The alarm happens before a second process writes R. The signal handler’s flags control whether the read restarts.",
+      "explanation": "With no restart flag, the blocked read reports EINTR. With SA_RESTART, it waits again and returns the byte from the writer.",
+      "transfer": "When would retrying EINTR automatically hide an application’s own cancellation request?",
+      "reference": [
+        "Read signal(7)",
+        "https://man7.org/linux/man-pages/man7/signal.7.html"
+      ],
+      "command": "sh /tmp/device-lab/run-driver.sh interrupt"
     },
     {
       "id": "control",
@@ -181,11 +290,13 @@ export const course = {
       "lab_device.c",
       "lab_platform.c",
       "lab_abi.h",
-      "Makefile"
+      "Makefile",
+      "lab_hello.c"
     ],
     "files": [
       "lab_device.ko",
-      "lab_platform.ko"
+      "lab_platform.ko",
+      "lab_hello.ko"
     ]
   }
 };
