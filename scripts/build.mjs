@@ -28,7 +28,7 @@ for (const name of ['cover.webp', 'favicon.ico', 'apple-touch-icon.png'])
 const tutorials = {};
 for (const lesson of course.lessons) {
   const guide = walkthroughs[lesson.id];
-  if (!guide?.goal || !guide.look || !guide.edit || guide.steps?.length < 2)
+  if (!guide?.edit || guide.steps?.length < 2)
     throw Error('Incomplete walkthrough for ' + lesson.id);
   const editSource = await readFile(at('../' + course.files[guide.editFile ?? lesson.file]), 'utf8');
   if (!editSource.includes(guide.edit)) throw Error('Missing edit target for ' + lesson.id);

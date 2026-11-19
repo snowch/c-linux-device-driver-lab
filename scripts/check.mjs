@@ -43,7 +43,7 @@ for (const lesson of course.lessons) {
     assert(!urls.has(url), lesson.id + ': duplicate reference link: ' + url);
     urls.add(url);
   }
-  for (const key of ['section', 'title', 'intro', 'question', 'task', 'hint', 'explanation', 'transfer', 'command'])
+  for (const key of ['section', 'title', 'intro', 'question', 'evidence', 'task', 'hint', 'explanation', 'transfer', 'command'])
     assert(typeof lesson[key] === 'string' && lesson[key].trim(), lesson.id + ': ' + key);
   const path = course.files[lesson.file];
   assert(path, lesson.id + ': active file must exist');
