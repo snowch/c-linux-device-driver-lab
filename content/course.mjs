@@ -8,6 +8,7 @@ export const course = {
   "summary": "Learn kernel module APIs, character-device operations and synthetic platform binding in a browser Linux guest.",
   "instructions": "Run in Linux loads the selected module and runs its check. The unchanged starter modules are already compiled for this guest. Edits to a module trigger Kbuild. Build from source forces a clean module build, which can take several minutes.",
   "files": {
+    "open-device.c": "./examples/open-device.c",
     "lab_hello.c": "./examples/lab_hello.c",
     "lab_device.c": "./examples/lab_device.c",
     "probe.c": "./examples/probe.c",
@@ -75,7 +76,22 @@ export const course = {
       "file": "lab_device.c"
     },
     {
+      "id": "open-device",
+      "section": "Character devices",
+      "title": "Open the device from userspace",
+      "intro": "Open the loaded driver’s device file and close the descriptor. Start with the same open() interface used for ordinary files.",
+      "question": "What does open() return after the runner loads the module and /dev/lab0 exists?",
+      "task": "Change the path to /dev/lab-missing. Compare the error with the earlier descriptor. Restore the original path before moving on.",
+      "hint": "Use the return value to tell a valid descriptor apart from a missing name.",
+      "explanation": "The kernel returns a descriptor for /dev/lab0. Opening a missing name fails with ENOENT. The next lesson uses the valid descriptor to transfer bytes.",
+      "transfer": "Once the device is open, which Linux calls could send and receive bytes?",
+      "file": "open-device.c",
+      "focus": "const char *path =",
+      "command": "sh /tmp/device-lab/run-driver.sh open-device"
+    },
+    {
       "id": "io",
+      "buildsOn": "open-device",
       "section": "Character devices",
       "title": "Move bytes through a character device",
       "intro": "A character device exposes operations through a file descriptor. This driver stores bytes in a bounded FIFO, where the earliest written byte is read first.",

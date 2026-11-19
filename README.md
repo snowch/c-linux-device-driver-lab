@@ -4,6 +4,8 @@ Copyright © 2026 Christopher Snow.
 
 [Open the course](https://snowch.github.io/c-linux-device-driver-lab/). Know basic C, Linux file descriptors and processes. Start with module APIs, then implement and test a character device and bind a synthetic platform driver.
 
+Open the device from a small userspace program before transferring bytes. The editor shows the section used in the exercise, with a full-file option. Linux builds and runs the complete driver with those edits.
+
 Each lesson includes editable C source, a runnable experiment, a code change, a hint and a transfer question. **Run in Linux** compiles the source with GCC and executes it in a self-hosted Alpine Linux guest using WebAssembly. The browser saves source changes per lesson. Reset Linux starts a fresh guest and keeps the editor changes.
 
 Choose **Download for offline use** before disconnecting. Save roughly 145 MB of free browser storage for this course. Open the same URL in the same browser profile after the page reports **Available offline**. The lesson files, editor, compiler, kernel and runtime are included. External documentation requires an internet connection. HTTPS or localhost and a browser with WebAssembly and service workers are required.
@@ -19,6 +21,7 @@ Choose **Download for offline use** before disconnecting. Save roughly 145 MB of
 ### Character devices
 
 - [Register and remove a character device](https://snowch.github.io/c-linux-device-driver-lab/#lifecycle)
+- [Open the device from userspace](https://snowch.github.io/c-linux-device-driver-lab/#open-device)
 - [Move bytes through a character device](https://snowch.github.io/c-linux-device-driver-lab/#io)
 - [Handle empty reads and full writes](https://snowch.github.io/c-linux-device-driver-lab/#nonblock)
 - [Retry a short character-device write](https://snowch.github.io/c-linux-device-driver-lab/#short-write)

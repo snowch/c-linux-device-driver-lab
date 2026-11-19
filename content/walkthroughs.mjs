@@ -2,6 +2,27 @@ const step = (heading, text, file, anchor, lines) => ({ heading, text, file, anc
 const guide = (goal, look, edit, ...steps) => ({ goal, look, edit, steps });
 
 export const walkthroughs = {
+  "open-device": {
+    "goal": "Open the loaded driver’s device file and close the descriptor. Start with the same open() interface used for ordinary files.",
+    "look": "Find opened /dev/lab0 as descriptor, then the runner’s confirmation that the device was removed.",
+    "edit": "const char *path =",
+    "steps": [
+      {
+        "heading": "Open the device node",
+        "text": "O_RDWR requests both read and write access to the driver.",
+        "anchor": "const char *path =",
+        "lines": 2,
+        "file": "open-device.c"
+      },
+      {
+        "heading": "Check and release the descriptor",
+        "text": "The error path prints the reason for failure. Closing a valid descriptor gives up this program’s reference.",
+        "anchor": "if (fd < 0)",
+        "lines": 4,
+        "file": "open-device.c"
+      }
+    ]
+  },
   'module-api': { ...guide(
     'Load the smallest module in this course, look for its two messages, and unload it. The first run uses the bundled module so you can see the lifecycle before building from source.',
     'Find an init line, an exit line and “standalone module removed”. Linux calls the functions in that order.',

@@ -55,6 +55,9 @@ else
         test -c /dev/lab0
         ls -l /dev/lab0
         grep '^lab_device ' /proc/modules
+    elif [ "$mode" = open-device ]; then
+        gcc -std=c11 -Wall -Wextra -Werror /tmp/lesson-input/open-device.c -o open-device
+        ./open-device
     elif [ "$mode" = references ]; then
         hold_device_open=1
         if [ "$hold_device_open" -eq 1 ]; then

@@ -6,6 +6,7 @@ const $ = id => document.getElementById(id);
 const source = $('source');
 const runButton = $('run');
 const buildButton = $('build-source');
+const toggleFile = $('toggle-file');
 const file = $('file');
 const terminal = $('terminal');
 const command = $('command');
@@ -17,7 +18,7 @@ const defaults = new Map();
 const edits = new Map();
 const files = Object.keys(course.files);
 const key = 'linux-lab:' + course.slug + ':';
-let lesson, activeFile, selection = 0;
+let lesson, activeFile, region, selection = 0;
 let vm, boot, bootController, running = false, line = '', terminalText = '';
 let runNumber = 0, resultMarker = '';
 
@@ -70,20 +71,38 @@ function positionSource(needle) {
 function showDraftNotice() {
   $('draft-notice').hidden = !files.some(name => valueOf(name) !== defaults.get(name));
 }
-function showSource(name) {
+function sectionOf(name, value) {
+  const { editFile = lesson.file, range } = tutorials[lesson.id];
+  if (name !== editFile || !range) return null;
+  const baseline = defaults.get(name);
+  const prefix = baseline.slice(0, range.start);
+  const suffix = baseline.slice(range.end);
+  // Prior drafts can contain edits anywhere in the file. Keep them visible.
+  if (value.length < prefix.length + suffix.length || !value.startsWith(prefix) || !value.endsWith(suffix))
+    return null;
+  return { prefix, suffix };
+}
+function showSource(name, fullFile = false) {
   activeFile = name;
   file.value = name;
-  source.value = valueOf(name) ?? '';
+  const value = valueOf(name) ?? '';
+  const section = sectionOf(name, value);
+  region = fullFile ? null : section;
+  source.value = region ? value.slice(region.prefix.length, value.length - region.suffix.length) : value;
+  toggleFile.hidden = !section;
+  toggleFile.textContent = region ? 'Show full file' : 'Show lesson section';
+  $('section-note').hidden = !region;
   source.scrollTop = 0;
   source.scrollLeft = 0;
   if (name === lesson.file) positionSource(lesson.focus);
   showDraftNotice();
 }
+toggleFile.onclick = () => showSource(activeFile, Boolean(region));
 $('edit-step').onclick = () => {
   $('program').open = true;
   const tutorial = tutorials[lesson.id];
   const targetFile = tutorial.editFile ?? lesson.file;
-  if (activeFile !== targetFile) showSource(targetFile);
+  showSource(targetFile);
   const edit = tutorial.edit;
   source.focus();
   positionSource(source.value.includes(edit) ? edit : lesson.focus);
@@ -94,13 +113,16 @@ $('program').addEventListener('toggle', () => {
 });
 source.oninput = () => {
   const draft = draftKey(activeFile);
-  edits.set(draft, source.value);
-  save(draft, source.value);
+  const text = source.value;
+  const code = region && text && !text.endsWith('\n') ? text + '\n' : text;
+  const value = region ? region.prefix + code + region.suffix : code;
+  edits.set(draft, value);
+  save(draft, value);
   showDraftNotice();
 };
 file.onchange = () => showSource(file.value);
 $('restore').onclick = () => {
-  if (source.value !== defaults.get(activeFile) && !confirm('Restore the starter for this file in this lesson?')) return;
+  if (valueOf(activeFile) !== defaults.get(activeFile) && !confirm('Restore the starter for this file in this lesson?')) return;
   const draft = draftKey(activeFile);
   edits.delete(draft);
   remove(draft);
@@ -167,6 +189,14 @@ async function showLesson(index) {
     task:'task', hint:'hint', explanation:'explanation',
     transfer:'transfer'
   })) $(id).textContent = lesson[field] ?? course[field];
+  const starter = course.lessons.find(item => item.id === lesson.buildsOn);
+  $('builds-on').hidden = !starter;
+  $('workbench-heading').textContent = starter ? 'Put it together' : 'Run it in Linux';
+  if (starter) {
+    const link = $('builds-on-link');
+    link.href = '#' + starter.id;
+    link.textContent = starter.title;
+  }
   showReferences(lesson.id);
   picker.value = lesson.id;
   $('next-lesson').replaceChildren();
@@ -181,7 +211,7 @@ async function showLesson(index) {
   $('edit-step').disabled = true;
   runButton.disabled = buildButton.disabled = true;
   if (await starterFiles && selection === thisSelection) {
-    showSource(lesson.file ?? files[0]);
+    showSource(tutorial.editFile ?? lesson.file);
     source.disabled = false;
     $('edit-step').disabled = false;
     runButton.disabled = buildButton.disabled = running;
