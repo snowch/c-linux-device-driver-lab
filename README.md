@@ -8,7 +8,7 @@ Open the device from a small userspace program before transferring bytes. The ed
 
 Each lesson includes editable source, a runnable experiment, a code change, a hint and a transfer question. **Run in Linux** starts the Alpine guest if needed, builds the required source and runs the check. The browser saves source per lesson when storage is available. **Reset Linux** clears the guest’s temporary files and keeps the editor changes.
 
-Choose **Download for offline use** before disconnecting. Save roughly 145 MB of free browser storage for this course. Open the same URL in the same browser profile after the page reports **Available offline**. The lesson files, editor, compiler, kernel and runtime are included. External documentation requires an internet connection. HTTPS or localhost and a browser with WebAssembly and service workers are required.
+Choose **App status → Save offline copy** before disconnecting. Save roughly 145 MB of free browser storage for this course. Open the same URL in the same browser profile after the page reports **Downloaded and ready to use offline**. The lesson files, editor, compiler, kernel and runtime are included. External documentation requires an internet connection. HTTPS or localhost and a browser with WebAssembly and service workers are required.
 
 Capstone sections link back to the smaller exercises and open the complete runnable example.
 
